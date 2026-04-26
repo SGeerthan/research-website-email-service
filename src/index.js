@@ -46,6 +46,33 @@ app.get("/api/health", (_req, res) => {
   res.json({ ok: true });
 });
 
+app.get("/api/status", (_req, res) => {
+  const requiredEnvVars = [
+    "SMTP_HOST",
+    "SMTP_PORT",
+    "SMTP_USER",
+    "SMTP_PASS",
+    "CONTACT_RECEIVER_EMAIL",
+  ];
+
+  const missingVars = requiredEnvVars.filter((key) => !process.env[key]);
+
+  res.json({
+    status: "online",
+    deployment: {
+      environment: process.env.NODE_ENV || "development",
+      timestamp: new Date().toISOString(),
+      port,
+    },
+    configuration: {
+      corsEnabled: true,
+      allowedOrigin,
+      environmentConfigured: missingVars.length === 0,
+      missingVariables: missingVars.length > 0 ? missingVars : null,
+    },
+  });
+});
+
 app.post("/api/contact", async (req, res) => {
   const result = validateContactPayload(req.body);
 

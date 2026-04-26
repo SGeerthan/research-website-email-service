@@ -60,6 +60,35 @@ Response:
 { "ok": true }
 ```
 
+### Deployment Status
+```
+GET /api/status
+```
+
+Response:
+```json
+{
+  "status": "online",
+  "deployment": {
+    "environment": "production",
+    "timestamp": "2026-04-26T10:30:00.000Z",
+    "port": 8000
+  },
+  "configuration": {
+    "corsEnabled": true,
+    "allowedOrigin": "http://localhost:5173",
+    "environmentConfigured": true,
+    "missingVariables": null
+  }
+}
+```
+
+**Use this endpoint to verify:**
+- ✅ API is deployed and running
+- ✅ Environment variables are configured
+- ✅ CORS is enabled
+- ✅ Any missing required variables
+
 ### Contact Form
 ```
 POST /api/contact
