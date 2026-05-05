@@ -1,9 +1,8 @@
 import cors from "cors";
 import dotenv from "dotenv";
+dotenv.config({ debug: true });
 import express from "express";
 import { sendContactEmail } from "./mailService.js";
-
-dotenv.config();
 
 const logger = {
   error: (message, error) => console.error(`[ERROR] ${message}`, error),
