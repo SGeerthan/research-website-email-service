@@ -1,25 +1,57 @@
-import cors from "cors";
 import dotenv from "dotenv";
-dotenv.config({ debug: true });
+dotenv.config(); // MUST be first
+
 import express from "express";
+import cors from "cors";
 import { sendContactEmail } from "./mailService.js";
 
+// ----------------------
+// Logger
+// ----------------------
 const logger = {
   error: (message, error) => console.error(`[ERROR] ${message}`, error),
   info: (message) => console.log(`[INFO] ${message}`),
 };
 
+// ----------------------
+// App Setup
+// ----------------------
 const app = express();
 const port = Number(process.env.PORT) || 8000;
-const allowedOrigin = process.env.CLIENT_ORIGIN || "http://localhost:5173";
+
+// ----------------------
+// CORS CONFIG (FIXED)
+// ----------------------
+const allowedOrigins = [
+  "http://localhost:5173",
+  "https://traffixion.netlify.app",
+];
 
 app.use(
   cors({
-    origin: allowedOrigin,
-  }),
+    origin: function (origin, callback) {
+      // Allow Postman / server-to-server (no origin)
+      if (!origin) return callback(null, true);
+
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      } else {
+        return callback(new Error("Not allowed by CORS"));
+      }
+    },
+    methods: ["GET", "POST", "OPTIONS"],
+    allowedHeaders: ["Content-Type"],
+  })
 );
+
+// IMPORTANT: handle preflight requests
+app.options("*", cors());
+
 app.use(express.json());
 
+// ----------------------
+// Validation
+// ----------------------
 function validateContactPayload(payload) {
   const name = payload?.name?.trim();
   const email = payload?.email?.trim();
@@ -41,6 +73,9 @@ function validateContactPayload(payload) {
   };
 }
 
+// ----------------------
+// Routes
+// ----------------------
 app.get("/api/health", (_req, res) => {
   res.json({ ok: true });
 });
@@ -65,7 +100,7 @@ app.get("/api/status", (_req, res) => {
     },
     configuration: {
       corsEnabled: true,
-      allowedOrigin,
+      allowedOrigins,
       environmentConfigured: missingVars.length === 0,
       missingVariables: missingVars.length > 0 ? missingVars : null,
     },
@@ -81,9 +116,12 @@ app.post("/api/contact", async (req, res) => {
 
   try {
     await sendContactEmail(result.value);
-    return res.status(200).json({ ok: true, message: "Message sent successfully." });
+    return res
+      .status(200)
+      .json({ ok: true, message: "Message sent successfully." });
   } catch (error) {
     logger.error("Failed to send contact email:", error);
+
     return res.status(500).json({
       ok: false,
       message: "Unable to send message right now. Please try again later.",
@@ -91,6 +129,9 @@ app.post("/api/contact", async (req, res) => {
   }
 });
 
+// ----------------------
+// Start Server
+// ----------------------
 app.listen(port, () => {
-  logger.info(`Contact email service running on http://localhost:${port}`);
+  logger.info(`Server running on http://localhost:${port}`);
 });
